@@ -1,0 +1,36 @@
+# How often in seconds to poll the api server
+poll_interval = 300
+
+# Which stats to query.  These are poorly documented in the API docs.
+# Current known values:
+# temperature
+# cap (humidity)
+# batteryVolt (battery voltage)
+query_stats = [ "temperature", "cap", "batteryVolt" ]
+
+# The API returns temperature in celsius.  Set this to true to convert
+# to fahrenheit.
+convert_to_f = true
+
+[oauth]
+# OAuth apps can be created here: https://mytaglist.com/eth/oauth2_apps.html
+# Client ID issued by the OAuth page
+id = ""
+
+# Client Secret issued by the OAuth page
+secret = ""
+
+[http]
+# Which port should the app listen on during the initialization phase.
+port = 10000
+
+[opentsdb]
+# Hostname of the opentsdb host
+host = "localhost"
+
+# Port to connect to
+port = 4242
+
+# Prefix for the metrics
+# Final value used is $prefix.$stat
+metrics_prefix = "wirelesstag.tags"

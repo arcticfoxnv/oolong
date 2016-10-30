@@ -1,0 +1,12 @@
+language: go
+
+go:
+    - master
+
+install:
+    - go get -t ./...
+    - go get code.google.com/p/go.tools/cmd/cover
+    - go get github.com/mattn/goveralls
+
+script:
+    - goveralls -service=travis-ci

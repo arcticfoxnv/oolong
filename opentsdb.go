@@ -2,6 +2,7 @@ package main
 
 import (
     "fmt"
+    "strings"
 
     "github.com/bluebreezecf/opentsdb-goclient/client"
     "github.com/bluebreezecf/opentsdb-goclient/config"
@@ -33,7 +34,7 @@ func (c *OpenTSDB) PutValue(tag *wirelesstag.Tag, valueType string, reading wire
     // For now, tag with both UUID and Name.  We can use these to filter/display
     // on dashboards
     data.Tags["uuid"] = tag.UUID
-    data.Tags["name"] = tag.Name
+    data.Tags["name"] = strings.Replace(tag.Name, " ", "_", -1)
 
     // Submit value to opentsdb
     _, err := c.client.Put([]client.DataPoint{data}, "summary")

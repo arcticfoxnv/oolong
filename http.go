@@ -8,7 +8,6 @@ import (
     "net/http"
 
     "github.com/arcticfoxnv/oolong/oauth"
-    "github.com/arcticfoxnv/oolong/wirelesstag"
 )
 
 var oauthClient oauth.OAuthClient
@@ -40,7 +39,7 @@ func ClientLoginHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // OAuth page sends user to here, which reads the code and exchanges it for an access token.
-func AuthorizeHandler(w http.ResponseWriter, r *http.Request) {
+func AuthorizeHandler(w http.ResponseWriter, r *http.Request, done chan int) {
     code := r.URL.Query().Get("code")
     log.Printf("Got auth code %s from client\n", code)
     accessToken, err := oauthClient.GetAccessToken(code)
@@ -49,18 +48,17 @@ func AuthorizeHandler(w http.ResponseWriter, r *http.Request) {
         return
     }
     log.Printf("Got access token: %s\n", accessToken)
-    tagClient = wirelesstag.NewClient(accessToken)
 
     // Create a new state, and store the access token
-    oolongState = NewOolongState()
-    oolongState.AccessToken = accessToken
+    state := NewOolongState()
+    state.AccessToken = accessToken
 
-    // Write the state to file, so future starts can skip the oauth
-    oolongState.WriteToFile()
-    clientReady <- 1
+    // Write the state to file
+    state.WriteToFile()
+    done <- 1
 }
 
-func StartHTTPServer(config *Config, startChan chan string) {
+func StartHTTPServer(config *Config, urlChan chan string, done chan int) {
     ip := GetLocalIPAddress()
     port := config.HTTP.Port
     if port == 0 {
@@ -71,13 +69,14 @@ func StartHTTPServer(config *Config, startChan chan string) {
     oauthClient = oauth.NewOAuthClient(config.OAuth.ID, config.OAuth.Secret, redirectURL)
 
     http.HandleFunc("/start", ClientLoginHandler)
-    http.HandleFunc("/authorize", AuthorizeHandler)
+    http.HandleFunc("/authorize", func(w http.ResponseWriter, r *http.Request) {
+        AuthorizeHandler(w, r, done)
+    })
 
     // Start URL will be http://<local ip>:<port>/authorize
     // Neither URL needs to be reachable from the remote OAuth server.  The only client
     // to access either URL will be the user's browser.
-    startChan <- fmt.Sprintf("http://%s:%d/start", ip, port)
+    urlChan <- fmt.Sprintf("http://%s:%d/start", ip, port)
 
-    // We'll listen forever... on the first run.  Subsequent runs won't start the server at all.
     http.ListenAndServe(fmt.Sprintf(":%d", port), nil)
 }

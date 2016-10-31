@@ -36,7 +36,10 @@ func TestNormalizeRawMultiStat(t *testing.T) {
 		},
 	}
 
-	output := NormalizeRawMultiStat(raw)
+	output, err := NormalizeRawMultiStat(raw)
+	if err != nil {
+		t.Fail()
+	}
 	if output[0].SlaveId != 0 {
 		t.Fail()
 	}
@@ -58,6 +61,43 @@ func TestNormalizeRawMultiStat(t *testing.T) {
 		t.Fail()
 	}
 	if output[1].Readings[1].Value != 4 {
+		t.Fail()
+	}
+}
+
+func TestNormalizeRawMultiStatBadDate(t *testing.T) {
+	raw := []RawMultiStat{
+		{
+			Date: "2006-01-02",
+			SlaveIds: []int{
+				0,
+				1,
+			},
+			Values: [][]float32{
+				{
+					1,
+					2,
+				},
+				{
+					3,
+					4,
+				},
+			},
+			TimeOfDaySeconds: [][]int{
+				{
+					0,
+					5,
+				},
+				{
+					1,
+					605,
+				},
+			},
+		},
+	}
+
+	_, err := NormalizeRawMultiStat(raw)
+	if err == nil {
 		t.Fail()
 	}
 }

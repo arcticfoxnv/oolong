@@ -1,7 +1,6 @@
 package wirelesstag
 
 import (
-	"log"
 	"time"
 )
 
@@ -31,7 +30,7 @@ type Reading struct {
 	Value     float32
 }
 
-func NormalizeRawMultiStat(rawStats []RawMultiStat) []Stat {
+func NormalizeRawMultiStat(rawStats []RawMultiStat) ([]Stat, error) {
 	normalizedStats := []Stat{}
 
 	// Maps slave_id -> index+1 in normStats
@@ -40,7 +39,7 @@ func NormalizeRawMultiStat(rawStats []RawMultiStat) []Stat {
 	for _, dayStat := range rawStats {
 		date, err := time.ParseInLocation(DateFormat, dayStat.Date, time.Local)
 		if err != nil {
-			log.Fatalf("Failed to parse date: %s\n", err.Error())
+			return nil, err
 		}
 
 		// Allocate space in normStats for each device
@@ -70,5 +69,5 @@ func NormalizeRawMultiStat(rawStats []RawMultiStat) []Stat {
 		}
 	}
 
-	return normalizedStats
+	return normalizedStats, nil
 }

@@ -132,7 +132,7 @@ func GetStats(tagClient wirelesstag.Client, queryType string, ids []int, start, 
 	// The results are returned in a set of nested arrays, with timestamps as offsets
 	// starting from midnight of the requested day.
 	// Let's transform that into something easier to handle.
-	return wirelesstag.NormalizeRawMultiStat(rawStats), nil
+	return wirelesstag.NormalizeRawMultiStat(rawStats)
 }
 
 func FilterNewStats(stat wirelesstag.Stat, lastReadTime time.Time) wirelesstag.Stat {

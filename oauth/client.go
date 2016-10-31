@@ -8,6 +8,10 @@ import (
 	"net/url"
 )
 
+var (
+	urlAccessToken = "https://www.mytaglist.com/oauth2/access_token.aspx"
+)
+
 type OAuthClient interface {
 	GetAuthorizeURL() string
 	GetAccessToken(string) (string, error)
@@ -36,8 +40,7 @@ func (c *oauthClient) GetAuthorizeURL() string {
 func (c *oauthClient) GetAccessToken(authCode string) (string, error) {
 
 	// Make a request to the server, providing the client id+secret+code from user.
-	postUrl := "https://www.mytaglist.com/oauth2/access_token.aspx"
-	resp, err := http.PostForm(postUrl, url.Values{
+	resp, err := http.PostForm(urlAccessToken, url.Values{
 		"client_id":     {c.clientId},
 		"client_secret": {c.clientSecret},
 		"code":          {authCode},

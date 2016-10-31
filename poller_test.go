@@ -87,3 +87,44 @@ func TestFilterNewStatsSomeFiltered(t *testing.T) {
 		t.Fail()
 	}
 }
+
+func TestGetTagBySlaveId(t *testing.T) {
+	tags := []wirelesstag.Tag{
+		{
+			SlaveId: 1,
+			Name:    "test1",
+		},
+		{
+			SlaveId: 0,
+			Name:    "test4",
+		},
+	}
+	tag := GetTagBySlaveId(tags, 0)
+	if tag.SlaveId != 0 {
+		t.Fail()
+	}
+}
+
+func TestGetTagBySlaveIdBadTagId(t *testing.T) {
+	tags := []wirelesstag.Tag{
+		{
+			SlaveId: 1,
+			Name:    "test1",
+		},
+		{
+			SlaveId: 0,
+			Name:    "test4",
+		},
+	}
+	tag := GetTagBySlaveId(tags, 2)
+	if tag != nil {
+		t.Fail()
+	}
+}
+
+func TestGetTagBySlaveIdNilTags(t *testing.T) {
+	tag := GetTagBySlaveId(nil, 2)
+	if tag != nil {
+		t.Fail()
+	}
+}

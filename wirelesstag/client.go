@@ -3,6 +3,7 @@ package wirelesstag
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -11,7 +12,7 @@ import (
 	"time"
 )
 
-var apiHost = "www.mytaglist.com"
+var apiHost = "https://www.mytaglist.com"
 
 // Various API modules - docs for each are at http://wirelesstag.net/media/mytaglist.com/apidoc.html
 var (
@@ -73,7 +74,7 @@ func (c *wirelessTagClient) doPostEmptyRequest(module, endpoint string) ([]byte,
 func (c *wirelessTagClient) doPostRequest(module, endpoint string, content io.Reader) ([]byte, *clientError) {
 	httpClient := &http.Client{}
 	authStr := fmt.Sprintf("Bearer %s", c.AccessToken)
-	url := fmt.Sprintf("https://%s/%s/%s", apiHost, module, endpoint)
+	url := fmt.Sprintf("%s/%s/%s", apiHost, module, endpoint)
 
 	// Build the request
 	req, err := http.NewRequest(http.MethodPost, url, content)
@@ -95,6 +96,7 @@ func (c *wirelessTagClient) doPostRequest(module, endpoint string, content io.Re
 		return nil, &clientError{Error: err, RequestURI: url, StatusCode: resp.StatusCode}
 	}
 	if resp.StatusCode != http.StatusOK {
+		err = errors.New("Something failed in the request")
 		return nil, &clientError{Error: err, RequestURI: url, StatusCode: resp.StatusCode, ResponseBody: body}
 	}
 

@@ -10,6 +10,7 @@ import (
 
 var (
 	urlAccessToken = "https://www.mytaglist.com/oauth2/access_token.aspx"
+	urlAuthorize = "https://www.mytaglist.com/oauth2/authorize.aspx"
 )
 
 type OAuthClient interface {
@@ -33,7 +34,7 @@ func NewOAuthClient(id, secret, redirect string) OAuthClient {
 
 // GetAuthorizeURL returns the URL the browser should be redirected to.
 func (c *oauthClient) GetAuthorizeURL() string {
-	return fmt.Sprintf("https://www.mytaglist.com/oauth2/authorize.aspx?client_id=%s&redirect_uri=%s", c.clientId, c.redirectUrl)
+	return fmt.Sprintf("%s?client_id=%s&redirect_uri=%s", urlAuthorize, c.clientId, c.redirectUrl)
 }
 
 // GetAccessToken exchanges the code from the user for an access token from the server

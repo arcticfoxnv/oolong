@@ -10,7 +10,7 @@ import (
 
 var (
 	urlAccessToken = "https://www.mytaglist.com/oauth2/access_token.aspx"
-	urlAuthorize = "https://www.mytaglist.com/oauth2/authorize.aspx"
+	urlAuthorize   = "https://www.mytaglist.com/oauth2/authorize.aspx"
 )
 
 type OAuthClient interface {

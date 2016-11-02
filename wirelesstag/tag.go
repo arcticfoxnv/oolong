@@ -1,7 +1,5 @@
 package wirelesstag
 
-import ()
-
 type Tag struct {
 	Alive            bool
 	BatteryRemaining float32

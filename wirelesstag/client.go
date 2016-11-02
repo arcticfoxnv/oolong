@@ -78,11 +78,11 @@ func (c *wirelessTagClient) doPostRequest(module, endpoint string, content io.Re
 
 	// Build the request
 	req, err := http.NewRequest(http.MethodPost, url, content)
-	req.Header.Add("Authorization", authStr)
-	req.Header.Add("Content-Type", "application/json")
 	if err != nil {
 		return nil, &clientError{Error: err}
 	}
+	req.Header.Add("Authorization", authStr)
+	req.Header.Add("Content-Type", "application/json")
 
 	// Execute
 	resp, err := httpClient.Do(req)

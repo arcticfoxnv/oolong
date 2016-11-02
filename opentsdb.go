@@ -23,8 +23,7 @@ func NewOpenTSDBClient(host string, port int, metricPrefix string) *OpenTSDB {
 	}
 }
 
-func (c *OpenTSDB) PutValue(tag *wirelesstag.Tag, valueType string, reading wirelesstag.Reading) error {
-	// Put the data into the new structure for submitting to opentsdb
+func (c *OpenTSDB) prepareValue(tag *wirelesstag.Tag, valueType string, reading wirelesstag.Reading) client.DataPoint {
 	data := client.DataPoint{
 		Metric:    fmt.Sprintf("%s.%s", c.prefix, valueType),
 		Timestamp: reading.Timestamp.Unix(),
@@ -35,6 +34,13 @@ func (c *OpenTSDB) PutValue(tag *wirelesstag.Tag, valueType string, reading wire
 	// on dashboards
 	data.Tags["uuid"] = tag.UUID
 	data.Tags["name"] = strings.Replace(tag.Name, " ", "_", -1)
+
+	return data
+}
+
+func (c *OpenTSDB) PutValue(tag *wirelesstag.Tag, valueType string, reading wirelesstag.Reading) error {
+	// Put the data into the new structure for submitting to opentsdb
+	data := c.prepareValue(tag, valueType, reading)
 
 	// Submit value to opentsdb
 	_, err := c.client.Put([]client.DataPoint{data}, "summary")

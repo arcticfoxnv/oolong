@@ -4,11 +4,12 @@ import (
 	"log"
 	"time"
 
+	"github.com/arcticfoxnv/oolong/state"
 	"github.com/arcticfoxnv/oolong/tsdb"
 	"github.com/arcticfoxnv/oolong/wirelesstag"
 )
 
-func Backfill(config *Config, state *OolongState, tagClient wirelesstag.Client, tsdbClient tsdb.TSDB, date time.Time) {
+func Backfill(config *Config, state state.State, tagClient wirelesstag.Client, tsdbClient tsdb.TSDB, date time.Time) {
 
 	// Get tag list
 	log.Printf("Fetching list of tags...\n")

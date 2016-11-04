@@ -4,11 +4,12 @@ import (
 	"log"
 	"time"
 
+	"github.com/arcticfoxnv/oolong/state"
 	"github.com/arcticfoxnv/oolong/tsdb"
 	"github.com/arcticfoxnv/oolong/wirelesstag"
 )
 
-func StatsFetcher(config *Config, state *OolongState, tagClient wirelesstag.Client, tsdbClient tsdb.TSDB) {
+func StatsFetcher(config *Config, state state.State, tagClient wirelesstag.Client, tsdbClient tsdb.TSDB) {
 
 	// Get tag list
 	log.Printf("Fetching list of tags...\n")
@@ -57,8 +58,8 @@ func StatsFetcher(config *Config, state *OolongState, tagClient wirelesstag.Clie
 
 				// Determine the last time this stat for this tag was updated
 				lastUpdated := time.Time{}
-				if state.LastUpdated[tag.UUID] != nil {
-					lastUpdated = state.LastUpdated[tag.UUID][queryType]
+				if !state.GetLastUpdateTime(tag.UUID, queryType).Equal(lastUpdated) {
+					lastUpdated = state.GetLastUpdateTime(tag.UUID, queryType)
 				}
 
 				// Filter out old readings
@@ -81,13 +82,13 @@ func StatsFetcher(config *Config, state *OolongState, tagClient wirelesstag.Clie
 						log.Fatalf("Failed to store value: %s\n", err.Error())
 					}
 					// Update the state with new timestamp
-					state.UpdateLastUpdatedTime(tag.UUID, queryType, reading.Timestamp)
+					state.Update(tag.UUID, queryType, reading.Timestamp)
 				}
 			}
 		}
 
 		// Once all of the stats have been processed, update the state file on disk
-		state.WriteToFile()
+		state.Save()
 		lastFetchTime = time.Now()
 
 		// Sleep to avoid excessive calls to the API server.

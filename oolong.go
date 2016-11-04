@@ -1,18 +1,18 @@
 package main
 
 import (
-	"encoding/json"
 	"io/ioutil"
 	"log"
 	"os"
 	"time"
 
 	"github.com/BurntSushi/toml"
+	"github.com/arcticfoxnv/oolong/state"
 	"github.com/arcticfoxnv/oolong/wirelesstag"
 	"github.com/urfave/cli"
 )
 
-const Version = "0.0.2"
+const Version = "0.0.3"
 const oolongStateFile = "state.json"
 
 type Config struct {
@@ -40,12 +40,6 @@ type OpenTSDBConfig struct {
 	MetricsPrefix string `toml:"metrics_prefix"`
 }
 
-type OolongState struct {
-	AccessToken string
-	// uuid -> reading_type -> timestamp
-	LastUpdated map[string]map[string]time.Time
-}
-
 func ReadConfigFile(filename string) *Config {
 	config := new(Config)
 	tomlData, err := ioutil.ReadFile(filename)
@@ -57,41 +51,6 @@ func ReadConfigFile(filename string) *Config {
 		log.Fatalf("Failed to parse config file: %s\n", err.Error())
 	}
 	return config
-}
-
-func NewOolongState() *OolongState {
-	return &OolongState{
-		LastUpdated: make(map[string]map[string]time.Time),
-	}
-}
-
-// Tries to read state from file
-func ReadOolongState() (*OolongState, error) {
-	data, err := ioutil.ReadFile(oolongStateFile)
-	if err != nil {
-		return nil, err
-	}
-	state := new(OolongState)
-	err = json.Unmarshal(data, state)
-	if err != nil {
-		return nil, err
-	}
-
-	return state, nil
-}
-
-// Overwrites the state file with the current state
-func (s *OolongState) WriteToFile() error {
-	data, _ := json.Marshal(s)
-	return ioutil.WriteFile(oolongStateFile, data, 0600)
-}
-
-// Helper func to make interacting with the LastUpdated map easierr
-func (s *OolongState) UpdateLastUpdatedTime(uuid string, readingType string, timestamp time.Time) {
-	if s.LastUpdated[uuid] == nil {
-		s.LastUpdated[uuid] = make(map[string]time.Time)
-	}
-	s.LastUpdated[uuid][readingType] = timestamp
 }
 
 func cmdHTTPServer(c *cli.Context) error {
@@ -127,13 +86,13 @@ func cmdPoller(c *cli.Context) error {
 	tsdbClient := NewOpenTSDBClient(config.OpenTSDB.Host, config.OpenTSDB.Port, config.OpenTSDB.MetricsPrefix)
 
 	// Try to load state from file
-	state, err := ReadOolongState()
+	state, err := state.NewStateFromFile(oolongStateFile)
 	if err != nil {
 		log.Fatalf("Unable to restore state: %s\n", err.Error())
 	}
 
 	// Use token from state file to initialize the wireless tag client
-	tagClient := wirelesstag.NewClient(state.AccessToken)
+	tagClient := wirelesstag.NewClient(state.GetAccessToken())
 
 	// Retrieve stats from cloud and push to data storage
 	StatsFetcher(config, state, tagClient, tsdbClient)
@@ -156,13 +115,13 @@ func cmdBackfill(c *cli.Context) error {
 	tsdbClient := NewOpenTSDBClient(config.OpenTSDB.Host, config.OpenTSDB.Port, config.OpenTSDB.MetricsPrefix)
 
 	// Try to load state from file
-	state, err := ReadOolongState()
+	state, err := state.NewStateFromFile(oolongStateFile)
 	if err != nil {
 		log.Fatalf("Unable to restore state: %s\n", err.Error())
 	}
 
 	// Use token from state file to initialize the wireless tag client
-	tagClient := wirelesstag.NewClient(state.AccessToken)
+	tagClient := wirelesstag.NewClient(state.GetAccessToken())
 
 	// Retrieve stats from cloud and push to data storage
 	Backfill(config, state, tagClient, tsdbClient, date)

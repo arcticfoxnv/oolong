@@ -8,6 +8,7 @@ import (
 	"net/http"
 
 	"github.com/arcticfoxnv/oolong/oauth"
+	"github.com/arcticfoxnv/oolong/state"
 )
 
 var oauthClient oauth.OAuthClient
@@ -50,11 +51,11 @@ func AuthorizeHandler(w http.ResponseWriter, r *http.Request, done chan int) {
 	log.Printf("Got access token: %s\n", accessToken)
 
 	// Create a new state, and store the access token
-	state := NewOolongState()
-	state.AccessToken = accessToken
+	state := state.NewFileState(oolongStateFile)
+	state.SetAccessToken(accessToken)
 
 	// Write the state to file
-	state.WriteToFile()
+	state.Save()
 	done <- 1
 }
 

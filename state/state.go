@@ -40,6 +40,7 @@ func NewStateFromFile(filename string) (State, error) {
 	if err != nil {
 		return nil, err
 	}
+	state.Filename = filename
 
 	return state, nil
 }

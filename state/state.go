@@ -17,7 +17,7 @@ type State interface {
 
 type fileState struct {
 	AccessToken string
-	Filename    string
+	Filename    string `json:"-"`
 	// uuid -> reading_type -> timestamp
 	LastUpdated map[string]map[string]time.Time
 }

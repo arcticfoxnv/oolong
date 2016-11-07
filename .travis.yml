@@ -3,6 +3,9 @@ language: go
 go:
     - master
 
+services:
+    - redis-server
+
 install:
     - go get -t ./...
     - go get github.com/mattn/goveralls

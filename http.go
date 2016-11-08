@@ -40,7 +40,7 @@ func ClientLoginHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // OAuth page sends user to here, which reads the code and exchanges it for an access token.
-func AuthorizeHandler(w http.ResponseWriter, r *http.Request, done chan int) {
+func AuthorizeHandler(w http.ResponseWriter, r *http.Request, state state.State, done chan int) {
 	code := r.URL.Query().Get("code")
 	log.Printf("Got auth code %s from client\n", code)
 	accessToken, err := oauthClient.GetAccessToken(code)
@@ -50,8 +50,7 @@ func AuthorizeHandler(w http.ResponseWriter, r *http.Request, done chan int) {
 	}
 	log.Printf("Got access token: %s\n", accessToken)
 
-	// Create a new state, and store the access token
-	state := state.NewFileState(oolongStateFile)
+	// Store the access token
 	state.SetAccessToken(accessToken)
 
 	// Write the state to file
@@ -60,6 +59,7 @@ func AuthorizeHandler(w http.ResponseWriter, r *http.Request, done chan int) {
 }
 
 func StartHTTPServer(config *Config, urlChan chan string, done chan int) {
+	var st state.State
 	ip := GetLocalIPAddress()
 	port := config.HTTP.Port
 	if port == 0 {
@@ -69,9 +69,17 @@ func StartHTTPServer(config *Config, urlChan chan string, done chan int) {
 	redirectURL := fmt.Sprintf("http://%s:%d/authorize", ip, port)
 	oauthClient = oauth.NewOAuthClient(config.OAuth.ID, config.OAuth.Secret, redirectURL)
 
+	// Create a new state
+	switch config.Backend {
+	case "file":
+		st = state.NewFileState(config.File.Filename)
+	case "redis":
+		st = state.NewRedisState(config.Redis.Host, config.Redis.Port, config.Redis.Key)
+	}
+
 	http.HandleFunc("/start", ClientLoginHandler)
 	http.HandleFunc("/authorize", func(w http.ResponseWriter, r *http.Request) {
-		AuthorizeHandler(w, r, done)
+		AuthorizeHandler(w, r, st, done)
 	})
 
 	// Start URL will be http://<local ip>:<port>/authorize

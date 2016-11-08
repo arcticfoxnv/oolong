@@ -1,57 +1,16 @@
 package main
 
 import (
-	"io/ioutil"
 	"log"
 	"os"
 	"time"
 
-	"github.com/BurntSushi/toml"
 	"github.com/arcticfoxnv/oolong/state"
 	"github.com/arcticfoxnv/oolong/wirelesstag"
 	"github.com/urfave/cli"
 )
 
-const Version = "0.0.3"
-const oolongStateFile = "state.json"
-
-type Config struct {
-	OAuth        OAuthConfig
-	HTTP         HTTPConfig
-	PollInterval int      `toml:"poll_interval"`
-	QueryStats   []string `toml:"query_stats"`
-	ConvertToF   bool     `toml:"convert_to_f"`
-	OpenTSDB     OpenTSDBConfig
-}
-
-type HTTPConfig struct {
-	Port int
-}
-
-// These are found at https://mytaglist.com/eth/oauth2_apps.html
-type OAuthConfig struct {
-	ID     string
-	Secret string
-}
-
-type OpenTSDBConfig struct {
-	Host          string
-	Port          int
-	MetricsPrefix string `toml:"metrics_prefix"`
-}
-
-func ReadConfigFile(filename string) *Config {
-	config := new(Config)
-	tomlData, err := ioutil.ReadFile(filename)
-	if err != nil {
-		log.Fatalf("Failed to read config file: %s\n", err.Error())
-	}
-	_, err = toml.Decode(string(tomlData), config)
-	if err != nil {
-		log.Fatalf("Failed to parse config file: %s\n", err.Error())
-	}
-	return config
-}
+const Version = "0.0.4"
 
 func cmdHTTPServer(c *cli.Context) error {
 	// Read config file
@@ -79,28 +38,38 @@ func cmdHTTPServer(c *cli.Context) error {
 }
 
 func cmdPoller(c *cli.Context) error {
+	var st state.State
+	var err error
+
 	// Read config file
 	config := ReadConfigFile(c.GlobalString("config"))
 
 	// Initialize data storage client
 	tsdbClient := NewOpenTSDBClient(config.OpenTSDB.Host, config.OpenTSDB.Port, config.OpenTSDB.MetricsPrefix)
 
-	// Try to load state from file
-	state, err := state.NewStateFromFile(oolongStateFile)
+	// Try to load state from backend
+	switch config.Backend {
+	case "file":
+		st, err = state.NewStateFromFile(config.File.Filename)
+	case "redis":
+		st, err = state.NewStateFromRedis(config.Redis.Host, config.Redis.Port, config.Redis.Key)
+	}
 	if err != nil {
 		log.Fatalf("Unable to restore state: %s\n", err.Error())
 	}
 
 	// Use token from state file to initialize the wireless tag client
-	tagClient := wirelesstag.NewClient(state.GetAccessToken())
+	tagClient := wirelesstag.NewClient(st.GetAccessToken())
 
 	// Retrieve stats from cloud and push to data storage
-	StatsFetcher(config, state, tagClient, tsdbClient)
+	StatsFetcher(config, st, tagClient, tsdbClient)
 
 	return nil
 }
 
 func cmdBackfill(c *cli.Context) error {
+	var st state.State
+	var err error
 	if c.String("date") == "" {
 		log.Fatalln("--date is required")
 	}
@@ -114,17 +83,22 @@ func cmdBackfill(c *cli.Context) error {
 	// Initialize data storage client
 	tsdbClient := NewOpenTSDBClient(config.OpenTSDB.Host, config.OpenTSDB.Port, config.OpenTSDB.MetricsPrefix)
 
-	// Try to load state from file
-	state, err := state.NewStateFromFile(oolongStateFile)
+	// Try to load state from backend
+	switch config.Backend {
+	case "file":
+		st, err = state.NewStateFromFile(config.File.Filename)
+	case "redis":
+		st, err = state.NewStateFromRedis(config.Redis.Host, config.Redis.Port, config.Redis.Key)
+	}
 	if err != nil {
 		log.Fatalf("Unable to restore state: %s\n", err.Error())
 	}
 
 	// Use token from state file to initialize the wireless tag client
-	tagClient := wirelesstag.NewClient(state.GetAccessToken())
+	tagClient := wirelesstag.NewClient(st.GetAccessToken())
 
 	// Retrieve stats from cloud and push to data storage
-	Backfill(config, state, tagClient, tsdbClient, date)
+	Backfill(config, st, tagClient, tsdbClient, date)
 
 	return nil
 }

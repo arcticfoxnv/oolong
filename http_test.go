@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/arcticfoxnv/oolong/oauth"
+	"github.com/arcticfoxnv/oolong/state"
 )
 
 type DummyOAuthClient struct {
@@ -74,7 +75,8 @@ func TestAuthorizeHandler(t *testing.T) {
 
 	done := make(chan int)
 	oauthClient = &DummyOAuthClient{}
-	go AuthorizeHandler(resp, req, done)
+	st := state.NewFileState("state.json")
+	go AuthorizeHandler(resp, req, st, done)
 	<-done
 
 	// TODO: Test valid token is written
@@ -93,7 +95,8 @@ func TestAuthorizeHandlerFailed(t *testing.T) {
 
 	done := make(chan int)
 	oauthClient = &DummyOAuthClient{}
-	go AuthorizeHandler(resp, req, done)
+	st := state.NewFileState("state.json")
+	go AuthorizeHandler(resp, req, st, done)
 	<-done
 
 	// TODO: Test no token is written

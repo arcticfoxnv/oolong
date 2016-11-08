@@ -12,13 +12,17 @@ query_stats = [ "temperature", "cap", "batteryVolt" ]
 # to fahrenheit.
 convert_to_f = true
 
+# Which state backend to use
+# Possible values: file, redis
+backend = "file"
+
 [oauth]
 # OAuth apps can be created here: https://mytaglist.com/eth/oauth2_apps.html
 # Client ID issued by the OAuth page
-id = ""
+id = "x"
 
 # Client Secret issued by the OAuth page
-secret = ""
+secret = "y"
 
 [http]
 # Which port should the app listen on during the initialization phase.
@@ -34,3 +38,11 @@ port = 4242
 # Prefix for the metrics
 # Final value used is $prefix.$stat
 metrics_prefix = "wirelesstag.tags"
+
+[file]
+filename = "state.json"
+
+[redis]
+host = "localhost"
+port = 6379
+key = "oolong"
